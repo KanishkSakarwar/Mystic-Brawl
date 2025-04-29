@@ -206,6 +206,11 @@ int main() {
 
     // Render loop
     unsigned int bulletTexture = loadTexture("textures/bullet.png");
+    // Set the window to full screen
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+    glViewport(0, 0, mode->width, mode->height);
+    float st = 0;
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
 
@@ -249,7 +254,7 @@ int main() {
         float currentTime = glfwGetTime();
 
         // Change direction every 2 seconds
-        if (currentTime - lastDirectionChangeTime[i] >= 2.0f) {
+        if (currentTime - lastDirectionChangeTime[i] >= st) {
         lastDirectionChangeTime[i] = currentTime;
         float angle = ((rand() % 360) * 3.14159f) / 180.0f; // Random angle in radians
         enemyMoveDirections[i][0] = cos(angle) * 0.005f; // Speed in x direction
@@ -268,13 +273,16 @@ int main() {
         enemyMoveDirections[i][1] = -enemyMoveDirections[i][1];
         }
     }
+    st = 2.0;
 
         // Handle projectile logic
         static bool spacePressed = false;
         static float projectileX = playerX, projectileY = playerY;
         static bool projectileActive = false;
+        static bool projact = false;
+        static bool xpres = false;
 
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed) {
+        if (!projact&&glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS && !spacePressed) {
             spacePressed = true;
             if (!projectileActive) {
             projectileX = playerX;
@@ -282,8 +290,19 @@ int main() {
             projectileActive = true;
             }
         }
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
+        if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_RELEASE) {
             spacePressed = false;
+        }
+         if (!projectileActive&&glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS && !spacePressed) {
+            xpres = true;
+            if (!projact) {
+            projectileX = playerX;
+            projectileY = playerY;
+            projact = true;
+            }
+        }
+        if (glfwGetKey(window, GLFW_KEY_X) == GLFW_RELEASE) {
+            xpres = false;
         }
 
         if (projectileActive) {
@@ -298,6 +317,21 @@ int main() {
             // Deactivate projectile if it goes out of bounds
             if (projectileX > 1.0f) {
             projectileActive = false;
+            }
+        }
+
+         if(projact){
+            projectileX -= 0.05f; // Move projectile to the right with increased speed
+
+            // Draw projectile
+            glUniform2f(glGetUniformLocation(shader, "offset"), projectileX, projectileY);
+            glBindTexture(GL_TEXTURE_2D, bulletTexture); // Use bullet texture
+            glBindVertexArray(playerVAO); // Reusing player VAO
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+            // Deactivate projectile if it goes out of bounds
+            if (projectileX < -1.0f) {
+            projact = false;
             }
         }
 
@@ -357,7 +391,7 @@ int main() {
             }
         }
         // Check for collisions between projectile and enemies
-        if (projectileActive) {
+        if (projectileActive||projact) {
             for (int i = 0; i < 3; i++) {
             if (abs(projectileX - enemyPositions[i][0]) < 0.1f && abs(projectileY - enemyPositions[i][1]) < 0.1f) {
                 score++;
