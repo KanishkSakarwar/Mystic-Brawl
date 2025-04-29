@@ -281,7 +281,11 @@ int main() {
         static bool projectileActive = false;
         static bool projact = false;
         static bool xpres = false;
-
+        if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
+            std::cout << "Game Over" << std::endl <<"Enemies Killed: " << score << std::endl;
+                glfwSetWindowShouldClose(window, true); // Close the window
+                break;
+        }
         if (!projact&&glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS && !spacePressed) {
             spacePressed = true;
             if (!projectileActive) {
