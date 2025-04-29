@@ -29,7 +29,7 @@
 | Key      | Action          |
 |----------|-----------------|
 | W/A/S/D  | Move player     |
-| Space    | Attack          |
+| Z/X    | Attack          |
 | ESC      | Exit game       |
 
 ---
