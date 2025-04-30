@@ -238,6 +238,104 @@ int main() {
             playerX -= playerSpeed;
         if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && playerX + 0.1f < 1.0f)
             playerX += playerSpeed;
+
+        // Draw player 2
+        static float player2X = 0.5f, player2Y = 0.5f; // Initial position for player 2
+        static bool player2ProjectileActive = false;
+        static float player2ProjectileX = player2X, player2ProjectileY = player2Y;
+        static bool player2SpacePressed = false;
+        static bool player2AttackLeftActive = false;
+        static bool player2AttackRightActive = false;
+        static bool player2LeftPressed = false;
+        static bool player2RightPressed = false;
+
+        // Handle player 2 movement
+        if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS && player2Y + 0.1f < 1.0f)
+            player2Y += playerSpeed;
+        if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS && player2Y - 0.1f > -1.0f)
+            player2Y -= playerSpeed;
+        if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS && player2X - 0.1f > -1.0f)
+            player2X -= playerSpeed;
+        if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && player2X + 0.1f < 1.0f)
+            player2X += playerSpeed;
+
+        // Draw player 2
+        glUniform2f(glGetUniformLocation(shader, "offset"), player2X, player2Y);
+        glBindTexture(GL_TEXTURE_2D, playerTexture);
+        glBindVertexArray(playerVAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+        // Handle player 2 left attack
+        if (!player2AttackLeftActive && !player2AttackRightActive && glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !player2LeftPressed) {
+            player2LeftPressed = true;
+            player2ProjectileX = player2X;
+            player2ProjectileY = player2Y;
+            player2AttackLeftActive = true;
+        }
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE) {
+            player2LeftPressed = false;
+        }
+
+        if (player2AttackLeftActive) {
+            player2ProjectileX -= 0.05f; // Move projectile to the left
+
+            // Draw player 2 left attack projectile
+            glUniform2f(glGetUniformLocation(shader, "offset"), player2ProjectileX, player2ProjectileY);
+            glBindTexture(GL_TEXTURE_2D, bulletTexture); // Use bullet texture
+            glBindVertexArray(playerVAO); // Reusing player VAO
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+            // Deactivate projectile if it goes out of bounds
+            if (player2ProjectileX < -1.0f) {
+            player2AttackLeftActive = false;
+            }
+        }
+
+        if (!player2AttackLeftActive && !player2AttackRightActive && glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS && !player2RightPressed) {
+            player2RightPressed = true;
+            player2ProjectileX = player2X;
+            player2ProjectileY = player2Y;
+            player2AttackRightActive = true;
+        }
+        if (glfwGetKey(window, GLFW_KEY_O) == GLFW_RELEASE) {
+            player2RightPressed = false;
+        }
+
+        if (player2AttackRightActive) {
+            player2ProjectileX += 0.05f; // Move projectile to the right
+
+            // Draw player 2 right attack projectile
+            glUniform2f(glGetUniformLocation(shader, "offset"), player2ProjectileX, player2ProjectileY);
+            glBindTexture(GL_TEXTURE_2D, bulletTexture); // Use bullet texture
+            glBindVertexArray(playerVAO); // Reusing player VAO
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+            // Deactivate projectile if it goes out of bounds
+            if (player2ProjectileX > 1.0f) {
+            player2AttackRightActive = false;
+            }
+        }
+
+        // Check for collisions between player 2 projectile and enemies
+        if (player2ProjectileActive || player2AttackLeftActive || player2AttackRightActive) {
+            for (int i = 0; i < 3; i++) {
+            if (abs(player2ProjectileX - enemyPositions[i][0]) < 0.1f && abs(player2ProjectileY - enemyPositions[i][1]) < 0.1f) {
+                score++;
+                // Respawn enemy at a random position, ensuring it's not where the players are
+                do {
+                enemyPositions[i][0] = ((rand() % 200) - 100) / 100.0f; // Random value between -1.0 and 1.0
+                enemyPositions[i][1] = ((rand() % 200) - 100) / 100.0f; // Random value between -1.0 and 1.0
+                } while ((abs(enemyPositions[i][0] - playerX) < 0.2f && abs(enemyPositions[i][1] - playerY) < 0.2f) ||
+                     (abs(enemyPositions[i][0] - player2X) < 0.2f && abs(enemyPositions[i][1] - player2Y) < 0.2f));
+                
+                player2ProjectileActive = false; // Deactivate upward projectile
+                player2AttackLeftActive = false; // Deactivate left attack
+                player2AttackRightActive = false; // Deactivate right attack
+                break;
+            }
+            }
+        }
         // Draw enemies
         for (int i = 0; i < 3; i++) {
             glUniform2f(glGetUniformLocation(shader, "offset"), enemyPositions[i][0], enemyPositions[i][1]);
